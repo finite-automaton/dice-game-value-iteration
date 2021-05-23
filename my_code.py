@@ -25,26 +25,25 @@ class MyAgent(DiceGameAgent):
         """
         # this calls the superclass constructor (does self.game = game)
         super().__init__(game)
-
-        # All possible actions
-        self.actions = game.actions
-        self.states = game.states
-        self.state_dict = self.generate_state_dict()
-        self.hold_all = self.actions[len(self.actions)-1]
-        # TODO: Find the optimal gamma and theta values
-        gamma = 0.9
-        theta = 0.001
-        values = {}
-        # Populate the values dictionary with the final value for each state
-        for state in self.states:
-            values[state] = game.final_score(state)
         start = time.process_time()
-        self.policy = self.value_iteration(self.states, self.actions, gamma, theta, values)
+
+        self.actions = game.actions # All possible actions for the game
+        self.states = game.states # All possible states for the game
+        self.state_map = self.generate_state_map() # Map (dict) of all states, similar to a transition function
+        # TODO: Find the optimal gamma and theta values
+        gamma = 0.9412
+        theta = 1.251
+        self.values = {}
+        # Populate the values dict with the arbitrary starting value
+        for state in self.states:
+            self.values[state] = 0
+
+        self.policy = self.get_optimal_policy_with_value_iteration(gamma, theta)
         end = time.process_time()
         print(self.policy)
         print("initialisation time = ", end-start)
 
-    def generate_state_dict(self):
+    def generate_state_map(self):
         # Efficiency!
         state_dict = {}
         for state in self.states:
@@ -52,40 +51,37 @@ class MyAgent(DiceGameAgent):
                 state_dict[(state, action)] = self.game.get_next_states(action, state)
         return state_dict
 
-    def value_iteration(self, states, actions, gamma, theta, values):
+    def get_optimal_policy_with_value_iteration(self, gamma, theta):
         policy = {}
         while True:
             delta = 0
-            for state in states:
-                temp = values[state] # Represents  V(S) at k-1
+            for state in self.states:
+                temp = self.values[state] # Represents  V(S) at k-1
                 max_value = 0
                 best_action = None
-                for action in actions:
-                    possible_states, game_over, reward, probabilities = self.state_dict[(state, action)]
+                for action in self.actions:
+                    possible_states, game_over, reward, probabilities = self.state_map[(state, action)]
                     # Only one possible expected value if the action ends the game
                     if game_over:
-                        expected_value = reward + (gamma * values[state])
+                        expected_value = reward + (gamma * self.values[state])
                         if expected_value >= max_value:
                             max_value = expected_value
                             best_action = action
                     # Otherwise, calculate the expected value of taking this action
                     else:
-                        # TODO: this may be unnecessary
-                        sp = zip(possible_states, probabilities)
+                        state_probabilities = zip(possible_states, probabilities)
                         expected_value = 0
-                        # TODO: probably dont need state here
                         # Sum the rewards and probabilities of the action according to the Bellman optimality equation
-                        for possible_states, prob in sp:
-                            #possible_states, game_over, reward, probabilities = self.state_dict[(possible_states, self.hold_all)]
-                            expected_value += prob * (reward + (gamma * values[possible_states])) # Sum the expected value of each possible outcome
+                        for possible_state, prob in state_probabilities:
+                            expected_value += prob * (reward + (gamma * self.values[possible_state])) # Sum the expected value of each possible outcome
                         if expected_value >= max_value:
                             max_value = expected_value
                             best_action = action
 
-                values[state] = max_value
+                self.values[state] = max_value
                 policy[state] = best_action
                 delta = max(delta, abs(temp - max_value))
-            # TODO: Maybe can check this earlier?
+
             if delta < theta:
                 return policy
 
@@ -148,25 +144,25 @@ def main():
     game = DiceGame()
 
 
-    #agent1 = AlwaysHoldAgent(game)
+    agent1 = AlwaysHoldAgent(game)
     # play_game_with_agent(agent1, game, verbose=True)
 
     print("\n")
 
-    #agent2 = PerfectionistAgent(game)
+    agent2 = PerfectionistAgent(game)
     # play_game_with_agent(agent2, game, verbose=True)
     #
     # print("\n")
     #
     agent3 = MyAgent(game)
     n = 0
+    j = 1000
     total_score = 0
-    while n < 100:
+    while n < j:
         score = play_game_with_agent(agent3, game, verbose=False)
         total_score += score
         n += 1
-    print("Average Score = ", total_score / 100)
-
+    print("Average Score = ", total_score / j)
 
 
 
