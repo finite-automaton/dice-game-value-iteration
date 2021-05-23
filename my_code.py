@@ -31,7 +31,6 @@ class MyAgent(DiceGameAgent):
         self.states = game.states
         self.state_dict = self.generate_state_dict()
         self.hold_all = self.actions[len(self.actions)-1]
-        print(self.hold_all)
         # TODO: Find the optimal gamma and theta values
         gamma = 0.9
         theta = 0.001
@@ -40,8 +39,9 @@ class MyAgent(DiceGameAgent):
         for state in self.states:
             values[state] = game.final_score(state)
         start = time.process_time()
-        self.policy = self.bellmanOptimality(self.states, self.actions, gamma, theta, values)
+        self.policy = self.value_iteration(self.states, self.actions, gamma, theta, values)
         end = time.process_time()
+        print(self.policy)
         print("initialisation time = ", end-start)
 
     def generate_state_dict(self):
@@ -52,40 +52,40 @@ class MyAgent(DiceGameAgent):
                 state_dict[(state, action)] = self.game.get_next_states(action, state)
         return state_dict
 
-    def bellmanOptimality(self, states, actions, gamma, theta, values):
+    def value_iteration(self, states, actions, gamma, theta, values):
         policy = {}
         while True:
             delta = 0
             for state in states:
-                temp = values[state]
+                temp = values[state] # Represents  V(S) at k-1
                 max_value = 0
                 best_action = None
                 for action in actions:
-                    # TODO: Do this only once, with numpy and efficiently
                     possible_states, game_over, reward, probabilities = self.state_dict[(state, action)]
-                    # only one possible state if the action ends the game
+                    # Only one possible expected value if the action ends the game
                     if game_over:
-                        state_value = reward + gamma * temp
-                        if state_value >= max_value:
-                            max_value = state_value
+                        expected_value = reward + (gamma * values[state])
+                        if expected_value >= max_value:
+                            max_value = expected_value
                             best_action = action
+                    # Otherwise, calculate the expected value of taking this action
                     else:
-                        # Otherwise, calculate the potential value of the action
                         # TODO: this may be unnecessary
                         sp = zip(possible_states, probabilities)
-                        state_value = 0
+                        expected_value = 0
                         # TODO: probably dont need state here
+                        # Sum the rewards and probabilities of the action according to the Bellman optimality equation
                         for possible_states, prob in sp:
-                            possible_states, game_over, reward, probabilities = self.state_dict[(possible_states, self.hold_all)]
-                            state_value += prob * (reward + (gamma * temp))
-                        if state_value >= max_value:
-                            max_value = state_value
+                            #possible_states, game_over, reward, probabilities = self.state_dict[(possible_states, self.hold_all)]
+                            expected_value += prob * (reward + (gamma * values[possible_states])) # Sum the expected value of each possible outcome
+                        if expected_value >= max_value:
+                            max_value = expected_value
                             best_action = action
 
                 values[state] = max_value
                 policy[state] = best_action
                 delta = max(delta, abs(temp - max_value))
-
+            # TODO: Maybe can check this earlier?
             if delta < theta:
                 return policy
 
@@ -159,15 +159,14 @@ def main():
     # print("\n")
     #
     agent3 = MyAgent(game)
-    # play_game_with_agent(agent3, game, verbose=True)
-    # play_game_with_agent(agent3, game, verbose=True)
-    # play_game_with_agent(agent3, game, verbose=True)
-    # play_game_with_agent(agent3, game, verbose=True)
-    # play_game_with_agent(agent3, game, verbose=True)
-    # play_game_with_agent(agent3, game, verbose=True)
-    # play_game_with_agent(agent3, game, verbose=True)
-    # play_game_with_agent(agent3, game, verbose=True)
-    # play_game_with_agent(agent3, game, verbose=True)
+    n = 0
+    total_score = 0
+    while n < 100:
+        score = play_game_with_agent(agent3, game, verbose=False)
+        total_score += score
+        n += 1
+    print("Average Score = ", total_score / 100)
+
 
 
 
