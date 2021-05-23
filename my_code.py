@@ -27,16 +27,28 @@ class MyAgent(DiceGameAgent):
         super().__init__(game)
 
         # All possible actions
-        actions = game.actions
-        states = game.states
+        self.actions = game.actions
+        self.states = game.states
+        self.state_dict = self.generate_state_dict()
+        # TODO: Find the optimal gamma and theta values
         gamma = 0.9
-        theta = 0.1
+        theta = 0.001
         values = {}
         # Populate the values dictionary with the final value for each state
-        for state in states:
+        for state in self.states:
             values[state] = game.final_score(state)
-        start = time.g
-        self.policy = self.bellmanOptimality(states, actions, gamma, theta, values)
+        start = time.process_time()
+        self.policy = self.bellmanOptimality(self.states, self.actions, gamma, theta, values)
+        end = time.process_time()
+        print("initialisation time = ", end-start)
+
+    def generate_state_dict(self):
+        # Efficiency!
+        state_dict = {}
+        for state in self.states:
+            for action in self.actions:
+                state_dict[(state, action)] = self.game.get_next_states(action, state)
+        return state_dict
 
     def bellmanOptimality(self, states, actions, gamma, theta, values):
         policy = {}
@@ -47,7 +59,8 @@ class MyAgent(DiceGameAgent):
                 max_value = 0
                 best_action = None
                 for action in actions:
-                    possible_state, game_over, reward, probabilities = self.game.get_next_states(action, state)
+                    # TODO: Do this only once, with numpy and efficiently
+                    possible_states, game_over, reward, probabilities = self.state_dict[(state, action)]
                     # only one possible state if the action ends the game
                     if game_over:
                         state_value = reward + gamma * temp
@@ -57,14 +70,14 @@ class MyAgent(DiceGameAgent):
                     else:
                         # Otherwise, calculate the potential value of the action
                         # TODO: this may be unnecessary
-                        sp = zip(possible_state, probabilities)
-                        potential_reward = 0
+                        sp = zip(possible_states, probabilities)
+                        state_value = 0
                         # TODO: probably dont need state here
-                        for possible_state, prob in sp:
-                            possible_state, game_over, reward, probabilities = self.game.get_next_states((0,1,2), possible_state)
-                            potential_reward += prob * (reward + (gamma * temp))
-                        if potential_reward >= max_value:
-                            max_value = potential_reward
+                        for possible_states, prob in sp:
+                            possible_states, game_over, reward, probabilities = self.game.get_next_states((0,1,2), possible_states)
+                            state_value += prob * (reward + (gamma * temp))
+                        if state_value >= max_value:
+                            max_value = state_value
                             best_action = action
 
                 values[state] = max_value
@@ -144,15 +157,15 @@ def main():
     # print("\n")
     #
     agent3 = MyAgent(game)
-    play_game_with_agent(agent3, game, verbose=True)
-    play_game_with_agent(agent3, game, verbose=True)
-    play_game_with_agent(agent3, game, verbose=True)
-    play_game_with_agent(agent3, game, verbose=True)
-    play_game_with_agent(agent3, game, verbose=True)
-    play_game_with_agent(agent3, game, verbose=True)
-    play_game_with_agent(agent3, game, verbose=True)
-    play_game_with_agent(agent3, game, verbose=True)
-    play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
+    # play_game_with_agent(agent3, game, verbose=True)
 
 
 
