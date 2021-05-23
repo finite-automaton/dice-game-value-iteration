@@ -76,7 +76,6 @@ class MyAgent(DiceGameAgent):
                         state_value = 0
                         # TODO: probably dont need state here
                         for possible_states, prob in sp:
-                            # TODO: Issue here as hard-coding hold all
                             possible_states, game_over, reward, probabilities = self.state_dict[(possible_states, self.hold_all)]
                             state_value += prob * (reward + (gamma * temp))
                         if state_value >= max_value:
