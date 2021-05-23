@@ -30,6 +30,8 @@ class MyAgent(DiceGameAgent):
         self.actions = game.actions
         self.states = game.states
         self.state_dict = self.generate_state_dict()
+        self.hold_all = self.actions[len(self.actions)-1]
+        print(self.hold_all)
         # TODO: Find the optimal gamma and theta values
         gamma = 0.9
         theta = 0.001
@@ -74,7 +76,8 @@ class MyAgent(DiceGameAgent):
                         state_value = 0
                         # TODO: probably dont need state here
                         for possible_states, prob in sp:
-                            possible_states, game_over, reward, probabilities = self.game.get_next_states((0,1,2), possible_states)
+                            # TODO: Issue here as hard-coding hold all
+                            possible_states, game_over, reward, probabilities = self.state_dict[(possible_states, self.hold_all)]
                             state_value += prob * (reward + (gamma * temp))
                         if state_value >= max_value:
                             max_value = state_value
@@ -146,12 +149,12 @@ def main():
     game = DiceGame()
 
 
-    agent1 = AlwaysHoldAgent(game)
+    #agent1 = AlwaysHoldAgent(game)
     # play_game_with_agent(agent1, game, verbose=True)
 
     print("\n")
 
-    agent2 = PerfectionistAgent(game)
+    #agent2 = PerfectionistAgent(game)
     # play_game_with_agent(agent2, game, verbose=True)
     #
     # print("\n")
