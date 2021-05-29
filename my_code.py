@@ -47,7 +47,9 @@ class MyAgent(DiceGameAgent):
         state_dict = {}
         for state in self.states:
             for action in self.actions:
-                state_dict[(action, state)] = self.game.get_next_states(action, state)
+                possible_states, game_over, reward, probabilities = self.game.get_next_states(action, state)
+                state_probabilities = zip(possible_states, probabilities)
+                state_dict[(action, state)] = (game_over, reward, state_probabilities)
         return state_dict
 
     def get_optimal_policy_with_value_iteration(self, gamma, theta):
@@ -73,7 +75,7 @@ class MyAgent(DiceGameAgent):
                 best_action = None  # Hold the action that is most likely to yield the max exp. value
                 for action in self.actions:
                     # Look up the possible states that result from this action
-                    possible_states, game_over, reward, probabilities = self.state_map[(action, state)]
+                    game_over, reward, state_probabilities = self.state_map[(action, state)]
                     # If the action ends the game, there is a deterministic reward and no future rewards
                     if game_over:
                         expected_value = reward
@@ -83,7 +85,6 @@ class MyAgent(DiceGameAgent):
                             best_action = action
                     # Otherwise, calculate the expected value of taking this action with value iteration
                     else:
-                        state_probabilities = zip(possible_states, probabilities)
                         expected_value = 0  # Initialise expected value so we can sum onto it
                         # Sum the rewards and probabilities of the action according to the Bellman optimality equation
                         for possible_state, prob in state_probabilities:
@@ -155,18 +156,18 @@ def main():
     # random seed makes the results deterministic
     # change the number to see different results
     #  or delete the line to make it change each time it is run
-    # np.random.seed()
+    np.random.seed(1)
 
-    seed = 0
-    results = []
-    while seed < 20:
-        result = runAGameXTimes(seed, 100000)
-        results.append((seed, result))
-        seed += 1
-
-    for result in results:
-        print("Seed : ", seed, ". Result: ", result)
-    # game = DiceGame()
+    # seed = 0
+    # results = []
+    # while seed < 20:
+    #     result = runAGameXTimes(seed, 100000)
+    #     results.append((seed, result))
+    #     seed += 1
+    #
+    # for result in results:
+    #     print("Seed : ", seed, ". Result: ", result)
+    game = DiceGame()
 
     agent1 = AlwaysHoldAgent(game)
     # play_game_with_agent(agent1, game, verbose=True)
@@ -179,19 +180,19 @@ def main():
     # print("\n")
     #
     agent3 = MyAgent(game)
-    # n = 0
-    # j = 10000
-    # total_score = 0
-    # low = 100
-    # high = 0
-    # while n < j:
-    #     score = play_game_with_agent(agent3, game, verbose=False)
-    #     total_score += score
-    #     if score > high:
-    #         high = score
-    #     if score < low:
-    #         low = score
-    #     n += 1
+    n = 0
+    j = 10000
+    total_score = 0
+    low = 100
+    high = 0
+    while n < j:
+        score = play_game_with_agent(agent3, game, verbose=False)
+        total_score += score
+        if score > high:
+            high = score
+        if score < low:
+            low = score
+        n += 1
 
 
 def runAGameXTimes(seed, iterations):
